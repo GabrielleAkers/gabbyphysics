@@ -102,6 +102,7 @@ game_canvas.addEventListener("click", evt => {
     wasm.exports.spawn_particle(evt.clientX - game_canvas.offsetLeft, evt.clientY - game_canvas.offsetTop);
 });
 document.addEventListener("keydown", evt => {
+    evt.preventDefault();
     switch (evt.code) {
         case "Space":
             started = !started;
@@ -114,6 +115,14 @@ container.style.display = "grid";
 container.style.gridTemplateColumns = "160px";
 container.style.color = "white";
 container.style.textAlign = "center";
+const start_button = document.createElement("button");
+start_button.innerText = "Toggle Simulation (spacebar)";
+start_button.onclick = (evt) => {
+    evt.preventDefault();
+    started = !started;
+    window.requestAnimationFrame(loop);
+};
+container.appendChild(start_button);
 const damping_slider = document.createElement("input");
 damping_slider.type = "range";
 damping_slider.min = "0";
@@ -130,7 +139,8 @@ container.appendChild(damping_slider_label);
 container.appendChild(damping_slider);
 const reset_btn = document.createElement("button");
 reset_btn.innerText = "Reset Particles";
-reset_btn.onclick = () => {
+reset_btn.onclick = evt => {
+    evt.preventDefault();
     wasm.exports.reset_particles();
 };
 container.appendChild(reset_btn);
