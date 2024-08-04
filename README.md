@@ -1,5 +1,7 @@
 # gabbyphysics
 
+view examples here: https://gabrielleakers.github.io/gabbyphysics/examples/web/
+
 based on the book [Game Physics Engine Development](http://www.r-5.org/files/books/computers/algo-list/realtime-3d/Ian_Millington-Game_Physics_Engine_Development-EN.pdf)
 
 we compile to wasm using the wasi-sdk and use the browser as a gui
