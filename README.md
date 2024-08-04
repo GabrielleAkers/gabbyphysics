@@ -8,7 +8,11 @@ we compile to wasm using the wasi-sdk and use the browser as a gui
 
 to get all this working i used [this stackexchange post](https://stackoverflow.com/questions/59587066/no-emscripten-how-to-compile-c-with-standard-library-to-webassembly), [this blog](https://michaelfranzl.github.io/clang-wasm-browser-starterpack/), and the [wasi-sdk docs](https://github.com/WebAssembly/wasi-sdk)
 
-## run examples
+## build examples
+```
+make build
+```
+or use the manual steps below
 ### fetch wasi-sdk
 ```
 export WASI_VERSION=23
@@ -38,7 +42,7 @@ ${WASI_SDK_PATH}/bin/clang++ \
   src/*.cpp \
   examples/web/src/cpp/water.cpp
 ```
-### serve
+## serve
 ```
 cd examples/web
 npm i
