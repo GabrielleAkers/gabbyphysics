@@ -95,6 +95,11 @@ namespace gabbyphysics
             return Vector3(x * vector.x, y * vector.y, z * vector.z);
         }
 
+        Vector3 reflect(const Vector3 &normal) const
+        {
+            return *this - normal * (*this * normal) * 2;
+        }
+
         real dot_product(const Vector3 &vector) const
         {
             return x * vector.x + y * vector.y + z * vector.z;

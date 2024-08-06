@@ -59,11 +59,13 @@ h6 {
   isolation: isolate;
 }
 
-canvas {
+#game_canvas,
+#grid_canvas {
   position: absolute;
   top: 0;
   bottom: 0;
   left: 0;
   right: 0;
   margin: auto;
+  border: white 1px solid;
 }
