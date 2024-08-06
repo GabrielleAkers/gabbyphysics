@@ -41,12 +41,12 @@ void create_particle(const Vector3 &position)
 {
     Water *particle = particles + next_particle;
 
-    particle->set_active(true);
     particle->set_position(position);
     particle->set_mass(1);
     particle->set_damping(damping);
     particle->set_acceleration(gravity);
     particle->clear_accumulator();
+    particle->set_active(true);
 
     next_particle = (next_particle + 1) % max_particles;
 
@@ -74,7 +74,11 @@ extern "C"
                 continue;
 
             const auto pp = p->get_position();
-            const auto v = p->get_velocity();
+            if (pp.y > screenY || pp.y < 0 || pp.x > screenX || pp.x < 0)
+            {
+                p->set_active(false);
+                continue;
+            }
 
             // check for solid collision TODO: make it good lol
             const auto coords_top = get_grid_coords(Vector3(pp.x, pp.y - particle_radius - tiny_offset, pp.z));
@@ -85,6 +89,8 @@ extern "C"
             const auto cell_bottom = grid[coords_bottom.i][coords_bottom.j];
             const auto cell_left = grid[coords_left.i][coords_left.j];
             const auto cell_right = grid[coords_right.i][coords_right.j];
+
+            const auto v = p->get_velocity();
             if (cell_top.type == CellType(solid) || cell_bottom.type == CellType(solid))
             {
                 p->set_velocity(v.reflect(Vector3::UP));
