@@ -22,7 +22,7 @@ build : ${WASI_SDK_PATH}
 	-I include \
 	-o examples/web/out/main.wasm \
 	src/*.cpp \
-	examples/web/src/cpp/water.cpp
+	examples/web/src/cpp/*.cpp
 	
 	@echo "built"
 

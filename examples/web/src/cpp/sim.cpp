@@ -1,8 +1,10 @@
 #include "water.h"
-#include "string"
-#include "list"
+#include "cell.h"
 
 using namespace gabbyphysics;
+
+unsigned screenX = 0;
+unsigned screenY = 0;
 
 const static unsigned max_particles = 1024;
 real damping = 0.95;
@@ -12,8 +14,28 @@ Vector3 gravity = Vector3::NEGATIVE_GRAVITY;
 Water particles[max_particles];
 unsigned next_particle = 0;
 
-unsigned screenX = 0;
-unsigned screenY = 0;
+const static unsigned num_cells = 40;
+Cell grid[num_cells][num_cells];
+
+real get_grid_h(const unsigned screen_y)
+{
+    return screen_y / num_cells;
+}
+
+struct GridCoord
+{
+    int i;
+    int j;
+};
+
+const GridCoord get_grid_coords(const Vector3 &position)
+{
+    const real grid_h = get_grid_h(screenY);
+    GridCoord coords;
+    coords.i = floor(position.x / grid_h);
+    coords.j = floor(position.y / grid_h);
+    return coords;
+}
 
 void create_particle(const Vector3 &position)
 {
@@ -35,7 +57,7 @@ void create_particle(const Vector3 &position)
     }
 }
 
-const real tiny_offset = 0.001;
+const real tiny_offset = 0.01;
 
 extern "C"
 {
@@ -53,16 +75,25 @@ extern "C"
 
             const auto pp = p->get_position();
             const auto v = p->get_velocity();
-            // bottom/top
-            if ((pp.y >= screenY - particle_radius - tiny_offset) || (pp.y <= particle_radius + tiny_offset))
+
+            // check for solid collision TODO: make it good lol
+            const auto coords_top = get_grid_coords(Vector3(pp.x, pp.y - particle_radius - tiny_offset, pp.z));
+            const auto coords_bottom = get_grid_coords(Vector3(pp.x, pp.y + particle_radius + tiny_offset, pp.z));
+            const auto coords_left = get_grid_coords(Vector3(pp.x - particle_radius - tiny_offset, pp.y, pp.z));
+            const auto coords_right = get_grid_coords(Vector3(pp.x + particle_radius + tiny_offset, pp.y, pp.z));
+            const auto cell_top = grid[coords_top.i][coords_top.j];
+            const auto cell_bottom = grid[coords_bottom.i][coords_bottom.j];
+            const auto cell_left = grid[coords_left.i][coords_left.j];
+            const auto cell_right = grid[coords_right.i][coords_right.j];
+            if (cell_top.type == CellType(solid) || cell_bottom.type == CellType(solid))
             {
                 p->set_velocity(v.reflect(Vector3::UP));
             }
-            // left/right
-            if ((pp.x <= particle_radius + tiny_offset) || (pp.x >= screenX - particle_radius - tiny_offset))
+            if (cell_left.type == CellType(solid) || cell_right.type == CellType(solid))
             {
                 p->set_velocity(v.reflect(Vector3::RIGHT));
             }
+
             p->integrate(duration);
         }
     }
@@ -84,6 +115,9 @@ extern "C"
 
     export void spawn_particle(const real x, const real y)
     {
+        const auto coords = get_grid_coords(Vector3(x, y, 0));
+        if (grid[coords.i][coords.j].type == CellType(solid))
+            return;
         create_particle(Vector3(x, y, 0));
         browser_draw_particles(x, y);
     }
@@ -137,5 +171,35 @@ extern "C"
 
             p->set_acceleration(gravity);
         }
+    }
+
+    export void init_grid()
+    {
+        const real grid_h = get_grid_h(screenY);
+
+        for (int i = 0; i < num_cells; i++)
+            for (int j = 0; j < num_cells; j++)
+            {
+                if (i == 0 || i == num_cells - 1)
+                {
+                    grid[i][j].type = CellType(solid);
+                }
+                else if (j == 0 || j == num_cells - 1)
+                {
+                    grid[i][j].type = CellType(solid);
+                }
+                else
+                    grid[i][j].type = CellType(air);
+
+                browser_draw_cell(i * grid_h, j * grid_h, grid[i][j].type, grid_h);
+            }
+    }
+
+    export void paint_wall(const real x, const real y)
+    {
+        const auto coords = get_grid_coords(Vector3(x, y, 0));
+        const real grid_h = get_grid_h(screenY);
+        grid[coords.i][coords.j].type = CellType(solid);
+        browser_draw_cell(coords.i * grid_h, coords.j * grid_h, CellType(solid), grid_h);
     }
 }

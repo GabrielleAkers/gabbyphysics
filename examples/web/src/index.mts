@@ -30,6 +30,7 @@ const import_object = {
         browser_draw_particles,
         browser_log,
         browser_clear_canvas,
+        browser_draw_cell
     },
     // wasi-sdk adds this import namespace when compiling to wasm32-wasi which is default unless --target=wasm32
     wasi_snapshot_preview1: {
@@ -55,6 +56,8 @@ interface WasmInstance extends WebAssembly.Instance {
         set_damping: (d: number) => void;
         set_particle_radius: (r: number) => void;
         set_gravity: (x: number, y: number) => void;
+        init_grid: () => void;
+        paint_wall: (x: number, y: number) => void;
     };
 }
 const wasm = (await WebAssembly.instantiateStreaming(fetch("out/main.wasm"), import_object)).instance as WasmInstance;
@@ -68,6 +71,24 @@ function browser_draw_particles(x: number, y: number) {
     ctx.fill();
     ctx.closePath();
 };
+
+const CellTypeColorMap: { [type: number]: string; } = {
+    0: "rgba(0, 1, 200, 0.2)",
+    1: "rgba(0, 0, 0, 0)",
+    2: "rgba(200, 200, 200, 1)",
+};
+
+function browser_draw_cell(x: number, y: number, type: number, cell_h: number) {
+    if (!grid_ctx) return;
+
+    let color: string = "rgb(227, 61, 148)";
+    if (Object.hasOwn(CellTypeColorMap, type))
+        color = CellTypeColorMap[type];
+    grid_ctx.fillStyle = color;
+    grid_ctx.fillRect(x, y, cell_h, cell_h);
+    grid_ctx.strokeStyle = "grey";
+    grid_ctx.strokeRect(x, y, cell_h, cell_h);
+}
 
 function cstrlen(buff: Uint8Array, ptr: number) {
     let len = 0;
@@ -115,10 +136,23 @@ function loop(timestamp: number) {
 }
 
 wasm.exports.set_screen_width(game_canvas.width);
+wasm.exports.init_grid();
+
+type ClickMode = "spawn" | "paint";
+let click_mode: ClickMode;
 
 game_canvas.addEventListener("click", evt => {
-    wasm.exports.spawn_particle(evt.clientX - game_canvas.offsetLeft, evt.clientY - game_canvas.offsetTop);
+    switch (click_mode) {
+        case "spawn":
+            wasm.exports.spawn_particle(evt.clientX - game_canvas.offsetLeft, evt.clientY - game_canvas.offsetTop);
+            break;
+        case "paint":
+            wasm.exports.paint_wall(evt.clientX - game_canvas.offsetLeft, evt.clientY - game_canvas.offsetTop);
+            break;
+    }
 });
+
+click_mode = "spawn";
 
 document.addEventListener("keydown", evt => {
     switch (evt.code) {
@@ -217,9 +251,31 @@ const gravity_label = document.createTextNode(`gravity`);
 container.appendChild(gravity_label);
 container.appendChild(gravity_scale);
 
-const gravity_dir_handler = (dir: { x: number, y: number; }) => {
-    console.log(dir);
+function gravity_dir_handler(dir: { x: number, y: number; }) {
     const gravity = scale_to_len(dir, GRAVITY_SCALE);
     wasm.exports.set_gravity(gravity.x, gravity.y);
 };
 container.appendChild(Compass(gravity_dir_handler));
+
+const click_mode_label = document.createTextNode(`click mode: ${click_mode}`);
+container.appendChild(click_mode_label);
+const btn_holder = document.createElement("div");
+btn_holder.style.display = "grid";
+btn_holder.style.gridTemplateColumns = "repeat(2, 80px)";
+const spawn_btn = document.createElement("button");
+spawn_btn.innerText = "Spawn";
+const paint_btn = document.createElement("button");
+paint_btn.innerText = "Paint";
+spawn_btn.onclick = evt => {
+    evt.preventDefault();
+    click_mode = "spawn";
+    click_mode_label.textContent = `click mode: ${click_mode}`;
+};
+paint_btn.onclick = evt => {
+    evt.preventDefault();
+    click_mode = "paint";
+    click_mode_label.textContent = `click mode: ${click_mode}`;
+};
+btn_holder.appendChild(spawn_btn);
+btn_holder.appendChild(paint_btn);
+container.appendChild(btn_holder);
