@@ -24,9 +24,11 @@ namespace gabbyphysics
         Particle() {}
         void set_position(const Vector3 &position);
         Vector3 get_position() const;
+        void get_position(Vector3 *vec) const;
         void set_velocity(const Vector3 &velocity);
         void set_velocity(const real x, const real y, const real z);
         Vector3 get_velocity() const;
+        void get_velocity(Vector3 *vec) const;
         void set_acceleration(const Vector3 &acceleration);
         Vector3 get_acceleration() const;
         void set_damping(const real damping);
@@ -37,6 +39,7 @@ namespace gabbyphysics
         real get_inverse_mass() const;
         void integrate(real duration);
         void clear_accumulator();
+        bool has_finite_mass() const;
         void add_force(const Vector3 &force);
     };
 }

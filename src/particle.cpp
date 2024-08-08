@@ -1,4 +1,3 @@
-// #include "assert.h"
 #include "gabbyphysics/particle.h"
 
 using namespace gabbyphysics;
@@ -6,7 +5,6 @@ using namespace gabbyphysics;
 // moves the particle forward in time using newton's method
 void Particle::integrate(real duration)
 {
-    // assert(duration > 0.0);
     if (duration == 0.0)
         return;
 
@@ -18,6 +16,8 @@ void Particle::integrate(real duration)
     velocity.add_scaled_vector(resulting_accel, duration);
 
     velocity *= real_pow(damping, duration);
+
+    clear_accumulator();
 }
 
 void Particle::set_position(const Vector3 &position)
@@ -28,6 +28,11 @@ void Particle::set_position(const Vector3 &position)
 Vector3 Particle::get_position() const
 {
     return position;
+}
+
+void Particle::get_position(Vector3 *vec) const
+{
+    *vec = position;
 }
 
 void Particle::set_velocity(const Vector3 &velocity)
@@ -45,6 +50,11 @@ void Particle::set_velocity(const real x, const real y, const real z)
 Vector3 Particle::get_velocity() const
 {
     return velocity;
+}
+
+void Particle::get_velocity(Vector3 *vec) const
+{
+    *vec = velocity;
 }
 
 void Particle::set_acceleration(const Vector3 &acceleration)
@@ -69,7 +79,6 @@ real Particle::get_damping() const
 
 void Particle::set_mass(const real mass)
 {
-    // assert(mass != 0);
     Particle::inverse_mass = ((real)1.0) / mass;
 }
 
@@ -89,6 +98,11 @@ void Particle::set_inverse_mass(const real inverse_mass)
 real Particle::get_inverse_mass() const
 {
     return inverse_mass;
+}
+
+bool Particle::has_finite_mass() const
+{
+    return inverse_mass != 0;
 }
 
 void Particle::clear_accumulator()
