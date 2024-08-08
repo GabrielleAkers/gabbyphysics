@@ -1,11 +1,17 @@
-import { Compass, scale_to_len } from "./compass_input.mjs";
+import { Compass, scale_to_len } from "./components/compass_input.mjs";
 
-export const load = async () => {
-    const game_canvas = document.getElementById("game_canvas") as HTMLCanvasElement;
+export const load = async (load_into: HTMLElement) => {
+    const game_canvas = document.createElement("canvas");
+    game_canvas.id = "game_canvas";
+    game_canvas.width = 800;
+    game_canvas.height = 800;
     const ctx = game_canvas.getContext("2d");
     if (!ctx) throw new Error("no 2d ctx");
 
-    const grid_canvas = document.getElementById("grid_canvas") as HTMLCanvasElement;
+    const grid_canvas = document.createElement("canvas");
+    grid_canvas.id = "grid_canvas";
+    grid_canvas.width = 800;
+    grid_canvas.height = 800;
     const grid_ctx = grid_canvas.getContext("2d");
     if (!grid_ctx) throw new Error("no grid ctx");
 
@@ -176,7 +182,7 @@ export const load = async () => {
         }
     });
 
-    const container = document.getElementById("container") as HTMLDivElement;
+    const container = document.createElement("div");
     container.style.display = "grid";
     container.style.gridTemplateColumns = "160px";
     container.style.color = "white";
@@ -307,4 +313,7 @@ export const load = async () => {
     };
     container.appendChild(toggle_gridlines_btn);
 
+    load_into.appendChild(grid_canvas);
+    load_into.appendChild(game_canvas);
+    load_into.appendChild(container);
 };

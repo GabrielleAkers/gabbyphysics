@@ -97,8 +97,7 @@ namespace gabbyphysics
 
         Vector3 reflect(const Vector3 &normal) const
         {
-            const auto v = *this - normal;
-            if (v.x == v.y == v.z == 0.0)
+            if (*this * normal == 0.0)
                 return *this * -1.0;
             return *this - normal * (*this * normal) * 2;
         }
