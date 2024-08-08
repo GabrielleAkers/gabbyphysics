@@ -97,6 +97,10 @@ namespace gabbyphysics
 
         Vector3 reflect(const Vector3 &normal) const
         {
+            if (dot_product(normal) == 0.0)
+            {
+                return *this * -1.0;
+            }
             return *this - normal * (*this * normal) * 2;
         }
 

@@ -1,4 +1,4 @@
-#include "water.h"
+#include "particlesim.h"
 #include "cell.h"
 
 using namespace gabbyphysics;
@@ -11,7 +11,7 @@ real damping = 0.95;
 real particle_radius = 5.0;
 Vector3 gravity = Vector3::NEGATIVE_GRAVITY;
 
-Water particles[max_particles];
+SimParticle particles[max_particles];
 unsigned next_particle = 0;
 
 const static unsigned num_cells = 40;
@@ -39,7 +39,7 @@ const GridCoord get_grid_coords(const Vector3 &position)
 
 void create_particle(const Vector3 &position)
 {
-    Water *particle = particles + next_particle;
+    SimParticle *particle = particles + next_particle;
 
     particle->set_position(position);
     particle->set_mass(1);
@@ -66,7 +66,7 @@ extern "C"
         if (duration < 0.0f)
             return;
 
-        for (Water *p = particles;
+        for (SimParticle *p = particles;
              p < particles + max_particles;
              p++)
         {
@@ -107,7 +107,7 @@ extern "C"
     export void draw_particles()
     {
         browser_clear_canvas();
-        for (Water *p = particles;
+        for (SimParticle *p = particles;
              p < particles + max_particles;
              p++)
         {
@@ -115,7 +115,7 @@ extern "C"
                 continue;
 
             const Vector3 pos = p->get_position();
-            browser_draw_particles(pos.x, pos.y);
+            browser_draw_point(pos.x, pos.y, 0, 0, 200);
         }
     }
 
@@ -125,14 +125,14 @@ extern "C"
         if (grid[coords.i][coords.j].type == CellType(solid))
             return;
         create_particle(Vector3(x, y, 0));
-        browser_draw_particles(x, y);
+        browser_draw_point(x, y, 0, 0, 200);
     }
 
     export void reset_particles()
     {
         for (auto &p : particles)
         {
-            p = Water();
+            p = SimParticle();
         }
         browser_clear_canvas();
     }
@@ -148,7 +148,7 @@ extern "C"
         if (damping < (real)0.0 || damping > (real)1.0)
             return;
         damping = d;
-        for (Water *p = particles;
+        for (SimParticle *p = particles;
              p < particles + max_particles;
              p++)
         {
@@ -168,7 +168,7 @@ extern "C"
     {
         gravity.x = x;
         gravity.y = y;
-        for (Water *p = particles;
+        for (SimParticle *p = particles;
              p < particles + max_particles;
              p++)
         {
@@ -197,7 +197,7 @@ extern "C"
                 else
                     grid[i][j].type = CellType(air);
 
-                browser_draw_cell(i * grid_h, j * grid_h, grid[i][j].type, grid_h);
+                browser_draw_rect(i * grid_h, j * grid_h, grid[i][j].type, grid_h, grid_h);
             }
     }
 
@@ -206,6 +206,6 @@ extern "C"
         const auto coords = get_grid_coords(Vector3(x, y, 0));
         const real grid_h = get_grid_h(screenY);
         grid[coords.i][coords.j].type = CellType(solid);
-        browser_draw_cell(coords.i * grid_h, coords.j * grid_h, CellType(solid), grid_h);
+        browser_draw_rect(coords.i * grid_h, coords.j * grid_h, CellType(solid), grid_h, grid_h);
     }
 }

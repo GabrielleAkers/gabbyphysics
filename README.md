@@ -8,9 +8,9 @@ we compile to wasm using the wasi-sdk and use the browser as a gui
 
 to get all this working i used [this stackexchange post](https://stackoverflow.com/questions/59587066/no-emscripten-how-to-compile-c-with-standard-library-to-webassembly), [this blog](https://michaelfranzl.github.io/clang-wasm-browser-starterpack/), and the [wasi-sdk docs](https://github.com/WebAssembly/wasi-sdk)
 
-## build examples
+## build examples (particlesim)
 ```
-make build
+make build IN=particlesim OUT=particlesim
 ```
 or use the manual steps below
 ### fetch wasi-sdk
@@ -38,9 +38,9 @@ ${WASI_SDK_PATH}/bin/clang++ \
   -Oz \
   --sysroot ${WASI_SDK_PATH}/share/wasi-sysroot \
   -I include \
-  -o examples/web/out/main.wasm \
+  -o examples/web/out/particlesim.wasm \
   src/*.cpp \
-  examples/web/src/cpp/water.cpp
+  examples/web/src/cpp/particlesim.cpp
 ```
 ## serve
 ```

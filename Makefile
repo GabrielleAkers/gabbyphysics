@@ -20,9 +20,9 @@ build : ${WASI_SDK_PATH}
 	-Wl,--allow-undefined \
 	--sysroot ${WASI_SDK_PATH}/share/wasi-sysroot \
 	-I include \
-	-o examples/web/out/main.wasm \
+	-o examples/web/out/${OUT}.wasm \
 	src/*.cpp \
-	examples/web/src/cpp/*.cpp
+	examples/web/src/cpp/${IN}.cpp
 	
 	@echo "built"
 

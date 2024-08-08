@@ -6,7 +6,7 @@
 
 using namespace std;
 
-class Water : public gabbyphysics::Particle
+class SimParticle : public gabbyphysics::Particle
 {
 private:
     bool active = false;

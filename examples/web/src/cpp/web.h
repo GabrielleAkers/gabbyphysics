@@ -16,8 +16,8 @@ export extern "C"
 {
     void browser_log(const char *log);
     void browser_clear_canvas();
-    void browser_draw_particles(gabbyphysics::real x, gabbyphysics::real y);
-    void browser_draw_cell(const int x, const int y, const int type, const int cell_h);
+    void browser_draw_point(gabbyphysics::real x, gabbyphysics::real y, const int r, const int g, const int b);
+    void browser_draw_rect(const int x, const int y, const int type, const int cell_w, const int cell_h);
 }
 
 extern "C"
