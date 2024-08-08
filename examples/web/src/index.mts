@@ -14,6 +14,12 @@ offscreen_grid.height = grid_canvas.height;
 const offscreen_grid_ctx = offscreen_grid.getContext("2d");
 if (!offscreen_grid_ctx) throw new Error("no offscreen grid ctx");
 
+const offscreen_grid_lines = document.createElement("canvas");
+offscreen_grid_lines.width = grid_canvas.width;
+offscreen_grid_lines.height = grid_canvas.height;
+const offscreen_grid_lines_ctx = offscreen_grid_lines.getContext("2d");
+if (!offscreen_grid_lines_ctx) throw new Error("no offscreen grid ctx");
+
 const DEFAULT_SIM_SPEED = 0.01;
 const DEFAULT_PARTICLE_RADIUS = 5;
 const DEFAULT_DAMPING = 0.95;
@@ -22,6 +28,7 @@ let SIM_SPEED = 0.01;
 let DAMPING = 0.95;
 let PARTICLE_RADIUS = 5;
 let GRAVITY_SCALE = 9.81;
+let DRAW_GRIDLINES = false;
 
 const memory = new WebAssembly.Memory({ initial: 4 });
 const import_object = {
@@ -62,12 +69,12 @@ interface WasmInstance extends WebAssembly.Instance {
 }
 const wasm = (await WebAssembly.instantiateStreaming(fetch("out/main.wasm"), import_object)).instance as WasmInstance;
 
-function browser_draw_particles(x: number, y: number) {
+function browser_draw_particles(x: number, y: number, r: number, g: number, b: number) {
     if (!ctx) return;
 
     ctx.beginPath();
     ctx.arc(x, y, PARTICLE_RADIUS, 0, 2 * Math.PI);
-    ctx.fillStyle = "blue";
+    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
     ctx.fill();
     ctx.closePath();
 };
@@ -79,15 +86,18 @@ const CellTypeColorMap: { [type: number]: string; } = {
 };
 
 function browser_draw_cell(x: number, y: number, type: number, cell_h: number) {
-    if (!grid_ctx) return;
-
     let color: string = "rgb(227, 61, 148)";
     if (Object.hasOwn(CellTypeColorMap, type))
         color = CellTypeColorMap[type];
-    grid_ctx.fillStyle = color;
-    grid_ctx.fillRect(x, y, cell_h, cell_h);
-    grid_ctx.strokeStyle = "grey";
-    grid_ctx.strokeRect(x, y, cell_h, cell_h);
+    offscreen_grid_ctx!.fillStyle = color;
+    offscreen_grid_ctx!.fillRect(x, y, cell_h, cell_h);
+    grid_ctx!.drawImage(offscreen_grid, 0, 0);
+
+    offscreen_grid_lines_ctx!.strokeStyle = "grey";
+    offscreen_grid_lines_ctx!.strokeRect(x, y, cell_h, cell_h);
+    if (DRAW_GRIDLINES) {
+        grid_ctx!.drawImage(offscreen_grid_lines, 0, 0);
+    }
 }
 
 function cstrlen(buff: Uint8Array, ptr: number) {
@@ -149,6 +159,7 @@ game_canvas.addEventListener("click", evt => {
         case "paint":
             wasm.exports.paint_wall(evt.clientX - game_canvas.offsetLeft, evt.clientY - game_canvas.offsetTop);
             break;
+
     }
 });
 
@@ -266,16 +277,31 @@ const spawn_btn = document.createElement("button");
 spawn_btn.innerText = "Spawn";
 const paint_btn = document.createElement("button");
 paint_btn.innerText = "Paint";
-spawn_btn.onclick = evt => {
-    evt.preventDefault();
+const highlight_btn = document.createElement("button");
+highlight_btn.innerText = "Color";
+spawn_btn.onclick = () => {
     click_mode = "spawn";
     click_mode_label.textContent = `click mode: ${click_mode}`;
 };
-paint_btn.onclick = evt => {
-    evt.preventDefault();
+paint_btn.onclick = () => {
     click_mode = "paint";
     click_mode_label.textContent = `click mode: ${click_mode}`;
 };
+
 btn_holder.appendChild(spawn_btn);
 btn_holder.appendChild(paint_btn);
 container.appendChild(btn_holder);
+
+const toggle_gridlines_btn = document.createElement("button");
+toggle_gridlines_btn.innerText = "Toggle Gridlines";
+toggle_gridlines_btn.onclick = () => {
+    DRAW_GRIDLINES = !DRAW_GRIDLINES;
+    if (DRAW_GRIDLINES) {
+        grid_ctx?.drawImage(offscreen_grid, 0, 0);
+        grid_ctx?.drawImage(offscreen_grid_lines, 0, 0);
+    } else {
+        grid_ctx?.clearRect(0, 0, grid_canvas.width, grid_canvas.height);
+        grid_ctx?.drawImage(offscreen_grid, 0, 0);
+    }
+};
+container.appendChild(toggle_gridlines_btn);

@@ -4,6 +4,7 @@
 #define export __attribute__((visibility("default")))
 
 #include "gabbyphysics/gabbyphysics.h"
+#include "string"
 
 #ifdef DEV_MODE
 constexpr bool dev_mode = true;
@@ -16,8 +17,25 @@ export extern "C"
 {
     void browser_log(const char *log);
     void browser_clear_canvas();
-    void browser_draw_particles(gabbyphysics::real x, gabbyphysics::real y);
+    void browser_draw_particles(gabbyphysics::real x, gabbyphysics::real y, int r, int g, int b);
     void browser_draw_cell(const int x, const int y, const int type, const int cell_h);
+}
+
+void debug_log(const char *log)
+{
+    if constexpr (dev_mode)
+    {
+        browser_log(log);
+    }
+}
+
+template <typename... Args>
+void debug_log(const std::string &format, Args... args)
+{
+    if constexpr (dev_mode)
+    {
+        browser_log(gabbyphysics::format_string(format, args...).c_str());
+    }
 }
 
 extern "C"
