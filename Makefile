@@ -5,7 +5,15 @@ WASI_SDK_PATH=${shell pwd}/wasi-sdk-${WASI_VERSION_FULL}-x86_64-linux
 # pass DEV_MODE="" to disable
 DEV_MODE ?= -DDEV_MODE
 
-build : ${WASI_SDK_PATH}
+SRC := ${wildcard examples/web/src/cpp/*.cpp}
+WASM := ${patsubst %.cpp,%.wasm,${patsubst examples/web/src/cpp/%, examples/web/out/%, ${SRC}}}
+
+build : ${WASM}
+	@echo built
+
+examples/web/out/%.wasm : examples/web/src/cpp/%.cpp ${WASI_SDK_PATH}
+	@echo building $@
+
 	@${WASI_SDK_PATH}/bin/clang++ \
 	${DEV_MODE} \
 	-nostartfiles \
@@ -20,11 +28,10 @@ build : ${WASI_SDK_PATH}
 	-Wl,--allow-undefined \
 	--sysroot ${WASI_SDK_PATH}/share/wasi-sysroot \
 	-I include \
-	-o examples/web/out/${OUT}.wasm \
+	-o $@ \
 	src/*.cpp \
-	examples/web/src/cpp/${IN}.cpp
-	
-	@echo "built"
+	$<
+
 
 ${WASI_SDK_PATH}:
 	wget "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_VERSION}/wasi-sdk-${WASI_VERSION_FULL}-x86_64-linux.tar.gz"
