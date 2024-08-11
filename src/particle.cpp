@@ -25,6 +25,11 @@ void Particle::set_position(const Vector3 &position)
     Particle::position = position;
 }
 
+void Particle::set_position(const real x, const real y, const real z)
+{
+    Particle::position = Vector3(x, y, z);
+}
+
 Vector3 Particle::get_position() const
 {
     return position;

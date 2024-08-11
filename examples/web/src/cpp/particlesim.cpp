@@ -57,6 +57,11 @@ void create_particle(const Vector3 &position)
     }
 }
 
+int main()
+{
+    return 0;
+}
+
 const real tiny_offset = 0.01;
 
 extern "C"
@@ -115,7 +120,7 @@ extern "C"
                 continue;
 
             const Vector3 pos = p->get_position();
-            browser_draw_point(pos.x, pos.y, 0, 0, 200);
+            browser_draw_point(pos.x, pos.y, particle_radius, 0, 0, 200);
         }
     }
 
@@ -125,7 +130,7 @@ extern "C"
         if (grid[coords.i][coords.j].type == CellType(solid))
             return;
         create_particle(Vector3(x, y, 0));
-        browser_draw_point(x, y, 0, 0, 200);
+        browser_draw_point(x, y, particle_radius, 0, 0, 200);
     }
 
     export void reset_particles()
@@ -137,10 +142,10 @@ extern "C"
         browser_clear_canvas();
     }
 
-    export void set_screen_width(const int x)
+    export void set_screen_size(const int x, const int y)
     {
         screenX = x;
-        screenY = x;
+        screenY = y;
     }
 
     export void set_damping(const real d)

@@ -11,7 +11,7 @@ WASM := ${patsubst %.cpp,%.wasm,${patsubst examples/web/src/cpp/%, examples/web/
 build : ${WASM}
 	@echo built
 
-examples/web/out/%.wasm : examples/web/src/cpp/%.cpp ${WASI_SDK_PATH}
+examples/web/out/%.wasm : examples/web/src/cpp/%.cpp src/*.cpp Makefile ${WASI_SDK_PATH}
 	@echo building $@
 
 	@${WASI_SDK_PATH}/bin/clang++ \
@@ -21,7 +21,7 @@ examples/web/out/%.wasm : examples/web/src/cpp/%.cpp ${WASI_SDK_PATH}
 	-fvisibility=hidden \
 	-Oz \
 	-fno-exceptions \
-	-Wl,--no-entry \
+	-Wl,--entry=main \
 	-Wl,--strip-all \
 	-Wl,--export-dynamic \
 	-Wl,--import-memory \
@@ -31,7 +31,7 @@ examples/web/out/%.wasm : examples/web/src/cpp/%.cpp ${WASI_SDK_PATH}
 	-o $@ \
 	src/*.cpp \
 	$<
-
+ 	
 
 ${WASI_SDK_PATH}:
 	wget "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_VERSION}/wasi-sdk-${WASI_VERSION_FULL}-x86_64-linux.tar.gz"

@@ -4,3 +4,4 @@ binaryen*
 wabt*
 node_modules
 *.wat
+emsdk

@@ -2,3 +2,7 @@
 #include "core.h"
 #include "particle.h"
 #include "helper.h"
+#include "pcontacts.h"
+#include "pfgen.h"
+#include "plinks.h"
+#include "pworld.h"

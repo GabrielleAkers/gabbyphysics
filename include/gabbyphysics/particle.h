@@ -23,6 +23,7 @@ namespace gabbyphysics
     public:
         Particle() {}
         void set_position(const Vector3 &position);
+        void set_position(const real x, const real y, const real z);
         Vector3 get_position() const;
         void get_position(Vector3 *vec) const;
         void set_velocity(const Vector3 &velocity);

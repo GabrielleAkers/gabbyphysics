@@ -1,5 +1,6 @@
 import { Compass, scale_to_len } from "./components/compass_input.mjs";
-export const load = async (load_into) => {
+import { cstr_by_ptr } from "./util.mjs";
+export const load = async (load_elems, update_timer, reset_timer) => {
     const game_canvas = document.createElement("canvas");
     game_canvas.id = "game_canvas";
     game_canvas.width = 800;
@@ -58,11 +59,11 @@ export const load = async (load_into) => {
         }
     };
     const wasm = (await WebAssembly.instantiateStreaming(fetch("out/particlesim.wasm"), import_object)).instance;
-    function browser_draw_point(x, y, r, g, b) {
+    function browser_draw_point(x, y, size, r, g, b) {
         if (!ctx)
             return;
         ctx.beginPath();
-        ctx.arc(x, y, PARTICLE_RADIUS, 0, 2 * Math.PI);
+        ctx.arc(x, y, size, 0, 2 * Math.PI);
         ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
         ctx.fill();
         ctx.closePath();
@@ -86,20 +87,6 @@ export const load = async (load_into) => {
             grid_ctx.drawImage(offscreen_grid_lines, 0, 0);
         }
     }
-    function cstrlen(buff, ptr) {
-        let len = 0;
-        while (buff[ptr] !== 0) {
-            len++;
-            ptr++;
-        }
-        return len;
-    }
-    function cstr_by_ptr(buff, ptr) {
-        const mem = new Uint8Array(buff);
-        const len = cstrlen(mem, ptr);
-        const bytes = new Uint8Array(buff, ptr, len);
-        return new TextDecoder().decode(bytes);
-    }
     function browser_log(log_ptr) {
         const buffer = memory.buffer;
         const message = cstr_by_ptr(buffer, log_ptr);
@@ -113,6 +100,7 @@ export const load = async (load_into) => {
     }
     let prev_timestamp = null;
     let started = false;
+    let frame_ids = [];
     function loop(timestamp) {
         if (!started) {
             prev_timestamp = null;
@@ -122,11 +110,14 @@ export const load = async (load_into) => {
         if (prev_timestamp !== null) {
             wasm.exports.update_particles((timestamp - prev_timestamp) * SIM_SPEED);
             wasm.exports.draw_particles();
+            if (Math.floor(((timestamp - prev_timestamp) / 1000) % 60) === 0)
+                update_timer(timestamp - prev_timestamp);
         }
         prev_timestamp = timestamp;
-        window.requestAnimationFrame(loop);
+        frame_ids.forEach(id => window.cancelAnimationFrame(id));
+        frame_ids.push(window.requestAnimationFrame(loop));
     }
-    wasm.exports.set_screen_width(game_canvas.width);
+    wasm.exports.set_screen_size(game_canvas.width, game_canvas.height);
     wasm.exports.init_grid();
     let click_mode;
     game_canvas.addEventListener("click", evt => {
@@ -144,8 +135,9 @@ export const load = async (load_into) => {
         switch (evt.code) {
             case "Space":
                 evt.preventDefault();
+                frame_ids.forEach(id => window.cancelAnimationFrame(id));
                 started = !started;
-                window.requestAnimationFrame(loop);
+                frame_ids.push(window.requestAnimationFrame(loop));
                 break;
         }
     });
@@ -158,8 +150,9 @@ export const load = async (load_into) => {
     start_button.innerText = "Toggle Simulation (spacebar)";
     start_button.onclick = (evt) => {
         evt.preventDefault();
+        frame_ids.forEach(id => window.cancelAnimationFrame(id));
         started = !started;
-        window.requestAnimationFrame(loop);
+        frame_ids.push(window.requestAnimationFrame(loop));
     };
     container.appendChild(start_button);
     const sim_speed_slider = document.createElement("input");
@@ -269,7 +262,12 @@ export const load = async (load_into) => {
         }
     };
     container.appendChild(toggle_gridlines_btn);
-    load_into.appendChild(grid_canvas);
-    load_into.appendChild(game_canvas);
-    load_into.appendChild(container);
+    load_elems([grid_canvas, game_canvas, container]);
+    return () => {
+        frame_ids.forEach(id => window.cancelAnimationFrame(id));
+        frame_ids = [];
+        prev_timestamp = null;
+        started = false;
+        reset_timer();
+    };
 };

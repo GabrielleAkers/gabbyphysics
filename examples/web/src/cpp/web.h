@@ -16,8 +16,26 @@ export extern "C"
 {
     void browser_log(const char *log);
     void browser_clear_canvas();
-    void browser_draw_point(gabbyphysics::real x, gabbyphysics::real y, const int r, const int g, const int b);
+    void browser_draw_point(gabbyphysics::real x, gabbyphysics::real y, gabbyphysics::real size, const int r, const int g, const int b);
     void browser_draw_rect(const int x, const int y, const int type, const int cell_w, const int cell_h);
+    void browser_draw_line(gabbyphysics::real x1, gabbyphysics::real y1, gabbyphysics::real x2, gabbyphysics::real y2, const int r, const int g, const int b);
+}
+
+void debug_log(const char *log)
+{
+    if constexpr (dev_mode)
+    {
+        browser_log(log);
+    }
+}
+
+template <typename... Args>
+void debug_log(const std::string &format, Args... args)
+{
+    if constexpr (dev_mode)
+    {
+        browser_log(gabbyphysics::format_string(format, args...).c_str());
+    }
 }
 
 extern "C"

@@ -1,5 +1,5 @@
-#ifndef WATER_H
-#define WATER_H
+#ifndef PARTICLESIM_H
+#define PARTICLESIM_H
 
 #include "web.h"
 #include "gabbyphysics/gabbyphysics.h"
@@ -23,4 +23,4 @@ public:
     }
 };
 
-#endif // !WATER_H
+#endif // !PARTICLESIM_H
