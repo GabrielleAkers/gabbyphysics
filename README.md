@@ -42,9 +42,9 @@ ${WASI_SDK_PATH}/bin/clang++ \
 	-Wl,--allow-undefined \
 	--sysroot ${WASI_SDK_PATH}/share/wasi-sysroot \
 	-I include \
-	-o examples/web/out/particlesim.wasm \
+	-o examples/web/out/${DEMO_NAME}.wasm \
 	src/*.cpp \
-	examples/web/src/cpp/particlesim.cpp
+	examples/web/src/cpp/${DEMO_NAME}.cpp
 ```
 ## serve
 ```
