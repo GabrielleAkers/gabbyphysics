@@ -8,9 +8,9 @@ we compile to wasm using the wasi-sdk and use the browser as a gui
 
 to get all this working i used [this stackexchange post](https://stackoverflow.com/questions/59587066/no-emscripten-how-to-compile-c-with-standard-library-to-webassembly), [this blog](https://michaelfranzl.github.io/clang-wasm-browser-starterpack/), and the [wasi-sdk docs](https://github.com/WebAssembly/wasi-sdk)
 
-## build examples (particlesim)
+## build examples
 ```
-make build IN=particlesim OUT=particlesim
+make build
 ```
 or use the manual steps below
 ### fetch wasi-sdk
@@ -25,22 +25,26 @@ tar xvf wasi-sdk-${WASI_VERSION_FULL}-x86_64-linux.tar.gz && rm wasi-sdk-${WASI_
 ### build wasm modules
 ```
 export WASI_SDK_PATH=`pwd`/wasi-sdk-${WASI_VERSION_FULL}-x86_64-linux
+export DEV_MODE=-DDEV_MODE
+export DEMO_NAME=particlesim
 
 ${WASI_SDK_PATH}/bin/clang++ \
-  -nostartfiles \
-  -fno-exceptions \
-  -Wl,--no-entry \
-  -Wl,--strip-all \
-  -Wl,--export-dynamic \
-  -Wl,--import-memory \
-  -Wl,--allow-undefined \
-  -fvisibility=hidden \
-  -Oz \
-  --sysroot ${WASI_SDK_PATH}/share/wasi-sysroot \
-  -I include \
-  -o examples/web/out/particlesim.wasm \
-  src/*.cpp \
-  examples/web/src/cpp/particlesim.cpp
+	${DEV_MODE} \
+	-nostartfiles \
+	-flto \
+	-fvisibility=hidden \
+	-Oz \
+	-fno-exceptions \
+	-Wl,--entry=main \
+	-Wl,--strip-all \
+	-Wl,--export-dynamic \
+	-Wl,--import-memory \
+	-Wl,--allow-undefined \
+	--sysroot ${WASI_SDK_PATH}/share/wasi-sysroot \
+	-I include \
+	-o examples/web/out/particlesim.wasm \
+	src/*.cpp \
+	examples/web/src/cpp/particlesim.cpp
 ```
 ## serve
 ```
@@ -58,6 +62,7 @@ wget "https://github.com/WebAssembly/wabt/releases/download/${WABT_VERSION}/wabt
 
 tar xvf wabt-${WABT_VERSION}-ubuntu-20.04.tar.gz && rm wabt-${WABT_VERSION}-ubuntu-20.04.tar.gz
 
-wabt-${WABT_VERSION}/bin/wasm2wat examples/web/out/main.wasm -o examples/web/out/main.wat
+export DEMO_NAME=particlesim
+wabt-${WABT_VERSION}/bin/wasm2wat examples/web/out/${DEMO_NAME}.wasm -o examples/web/out/${DEMO_NAME}.wat
 ```
 there is also an online version of wasm2wat [here](https://webassembly.github.io/wabt/demo/wasm2wat/)
