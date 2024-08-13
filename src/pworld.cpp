@@ -85,9 +85,11 @@ ParticleForceRegistry &ParticleWorld::get_force_registry()
     return registry;
 }
 
-void GroundContacts::init(gabbyphysics::ParticleWorld::Particles *particles)
+void GroundContacts::init(gabbyphysics::ParticleWorld::Particles *particles, gabbyphysics::real world_x, gabbyphysics::real world_y)
 {
     GroundContacts::particles = particles;
+    GroundContacts::world_x = world_x;
+    GroundContacts::world_y = world_y;
 }
 
 unsigned GroundContacts::add_contact(gabbyphysics::ParticleContact *contact, unsigned limit) const
@@ -98,12 +100,23 @@ unsigned GroundContacts::add_contact(gabbyphysics::ParticleContact *contact, uns
          p++)
     {
         auto pp = (*p)->get_position();
-        if (pp.y < 0.0f)
+        if (pp.y < 0.0f || pp.y > world_y)
         {
             contact->contact_normal = gabbyphysics::Vector3::UP;
             contact->particle[0] = *p;
             contact->particle[1] = NULL;
             contact->penetration = -pp.y;
+            contact->restitution = 0.2f;
+            contact++;
+            count++;
+        }
+
+        if (pp.x < 0.0f || pp.x > world_x)
+        {
+            contact->contact_normal = gabbyphysics::Vector3::RIGHT;
+            contact->particle[0] = *p;
+            contact->particle[1] = NULL;
+            contact->penetration = -pp.x;
             contact->restitution = 0.2f;
             contact++;
             count++;

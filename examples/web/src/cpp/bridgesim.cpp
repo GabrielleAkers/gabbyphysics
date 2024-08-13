@@ -43,16 +43,16 @@ BridgeSim::BridgeSim() : world(max_particles * 10), cables(0), rods(0), cable_co
         world.get_particles().push_back(particle_array + i);
     }
 
-    ground_contact_generator.init(&world.get_particles());
+    ground_contact_generator.init(&world.get_particles(), 800, 800);
     world.get_contact_generators().push_back(&ground_contact_generator);
 
     for (unsigned i = 0; i < 12; i++)
     {
         unsigned x = (i % 12) / 2;
         particle_array[i].set_position(
-            real(i / 2) * 500.0f - 200.0f,
+            real(i / 2) * 300.0f - 200.0f,
             400,
-            real(i % 2) * 2.0f - 1.0f);
+            0);
         particle_array[i].set_velocity(0, 0, 0);
         particle_array[i].set_damping(damping);
         particle_array[i].set_acceleration(Vector3::NEGATIVE_GRAVITY);
@@ -74,9 +74,9 @@ BridgeSim::BridgeSim() : world(max_particles * 10), cables(0), rods(0), cable_co
     {
         cable_constraints[i].particle = particle_array + i;
         cable_constraints[i].anchor = Vector3(
-            real(i / 2) * 550.0f - 220.0f,
-            600,
-            real(i % 2) * 1.6f - 0.8f);
+            real(i / 2) * 300.0f - 200.0f,
+            400,
+            0);
         if (i < 6)
             cable_constraints[i].max_length = real(i / 2) * 5.0f + 30.0f;
         else
@@ -218,7 +218,7 @@ void BridgeSim::update(real duration)
     // Run the simulation
     world.run_physics(duration);
 
-    update_ball();
+    // update_ball();
 
     browser_log("end update");
 }
@@ -242,32 +242,6 @@ int main()
     browser_log("main");
 }
 
-void init_sim(unsigned w, unsigned h)
-{
-    world_x = w;
-    world_y = h;
-    for (unsigned i = 0; i < max_particles; i++)
-    {
-        Particle *p = particles + i;
-        p->set_acceleration(gravity);
-        p->set_velocity(0, 0, 0);
-        p->set_mass(1);
-        p->clear_accumulator();
-        world.get_particles().push_back(p);
-    }
-
-    for (unsigned i = 0; i < max_contact_gens; i++)
-    {
-        world.get_contact_generators().push_back(&cable_array[i]);
-        world.get_contact_generators().push_back(&rod_array[i]);
-        world.get_contact_generators().push_back(&cable_constraint_array[i]);
-        world.get_contact_generators().push_back(&rod_constraint_array[i]);
-    }
-
-    ground_contact_generator.init(&world.get_particles());
-    world.get_contact_generators().push_back(&ground_contact_generator);
-}
-
 void update(real duration)
 {
     app->update(duration);
@@ -279,34 +253,10 @@ void display()
     app->display();
 }
 
-Particle *create_particle()
-{
-    Particle *p = particles + next_particle;
-    p->set_velocity(0, 0, 0);
-    p->set_damping(damping);
-    p->set_acceleration(gravity);
-    p->set_mass(1);
-    p->clear_accumulator();
-    world.get_particles().push_back(p);
-
-    next_particle = (next_particle + 1) % max_particles;
-    return p;
-}
-
-ParticleCable *create_cable()
-{
-    ParticleCable *c = cable_array + next_cable;
-    next_cable = (next_cable + 1) % max_contact_gens;
-
-    world.get_contact_generators().push_back(c);
-    return c;
-}
-
 extern "C"
 {
     export void init(unsigned w, unsigned h)
     {
-        init_sim(w, h);
     }
 
     export void spawn_particle(const real x, const real y)
@@ -316,20 +266,6 @@ extern "C"
 
     export void create_cable(const real x1, const real y1, const real x2, const real y2)
     {
-        Particle *p1 = create_particle();
-        Particle *p2 = create_particle();
-        p1->set_position(Vector3(x1, y1, 0));
-        p2->set_position(Vector3(x2, y2, 0));
-        browser_draw_point(x1, y1, PARTICLE_RADIUS, 250, 0, 250);
-        browser_draw_point(x2, y2, PARTICLE_RADIUS, 250, 0, 250);
-
-        ParticleCable *c = create_cable();
-        c->particle[0] = p1;
-        c->particle[1] = p2;
-        c->max_length = (p2->get_position() - p2->get_position()).magnitude();
-        c->restitution = 0.3f;
-
-        browser_draw_line(x1, y1, x2, y2, 250, 0, 250);
     }
 
     export void set_screen_size(unsigned x, unsigned y)

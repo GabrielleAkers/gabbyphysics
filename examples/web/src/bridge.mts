@@ -28,7 +28,8 @@ export const load = async (load_elems: ElementLoaderCallback, update_timer: (n: 
             browser_log,
             browser_clear_canvas,
             browser_draw_rect: (...args: any[]) => { },
-            browser_draw_line
+            browser_draw_line,
+            browser_draw_radial_gradient: () => { }
         },
         // wasi-sdk adds this import namespace when compiling to wasm32-wasi which is default unless --target=wasm32
         wasi_snapshot_preview1: {
@@ -41,6 +42,7 @@ export const load = async (load_elems: ElementLoaderCallback, update_timer: (n: 
             fd_write(...args: any[]): any {
                 return 0;
             },
+            random_get: Math.random
         }
     };
 
@@ -216,7 +218,7 @@ export const load = async (load_elems: ElementLoaderCallback, update_timer: (n: 
     const create_component = (cmd: ComponentTypes) => {
         console.log("create mode: ", cmd);
         current_cmd = cmd;
-        if (cmd == "PARTICLE")
+        if (cmd === "PARTICLE")
             click_mode = "spawn_particle";
         else
             click_mode = "create_component";

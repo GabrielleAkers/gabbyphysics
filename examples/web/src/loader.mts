@@ -10,7 +10,8 @@ interface Demo {
 
 const available_demos: Demo[] = [
     { name: "Ball Bouncer", description: "Particle ballistics demo. Paint walls, bounce balls.", path: "./particle.mjs" },
-    { name: "Bridges and Ropes", description: "Create objects out of springlike things", path: "./bridge.mjs" }
+    // { name: "Water Sim", description: "It simulates water.", path: "./watersim.mjs" },
+    // { name: "Bridges and Ropes", description: "Create objects out of springlike things", path: "./bridge.mjs" }
 ];
 
 const LAST_DEMO_STORAGE_KEY = "LAST_DEMO";

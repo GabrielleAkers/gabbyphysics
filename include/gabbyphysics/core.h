@@ -2,6 +2,7 @@
 #define GABBYPHYSICS_CORE_H
 
 #include "precision.h"
+#include "random"
 
 namespace gabbyphysics
 {
@@ -20,6 +21,7 @@ namespace gabbyphysics
 
         Vector3(const real x, const real y, const real z) : x(x), y(y), z(z) {}
 
+        const static Vector3 ZERO;
         const static Vector3 GRAVITY;
         const static Vector3 NEGATIVE_GRAVITY;
         const static Vector3 UP;
@@ -27,6 +29,16 @@ namespace gabbyphysics
         const static Vector3 X;
         const static Vector3 Y;
         const static Vector3 Z;
+
+        static Vector3 get_random()
+        {
+            std::mt19937_64 gen{std::random_device()()};
+            std::uniform_real_distribution<double> dis{0.0, 1.0};
+
+            Vector3 vec = Vector3(dis(gen), dis(gen), dis(gen));
+            vec.normalize();
+            return vec;
+        }
 
         void operator+=(const Vector3 &v)
         {

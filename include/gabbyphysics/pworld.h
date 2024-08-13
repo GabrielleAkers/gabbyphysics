@@ -40,9 +40,11 @@ namespace gabbyphysics
     class GroundContacts : public gabbyphysics::ParticleContactGenerator
     {
         gabbyphysics::ParticleWorld::Particles *particles;
+        gabbyphysics::real world_x;
+        gabbyphysics::real world_y;
 
     public:
-        void init(gabbyphysics::ParticleWorld::Particles *particles);
+        void init(gabbyphysics::ParticleWorld::Particles *particles, gabbyphysics::real world_x, gabbyphysics::real world_y);
 
         virtual unsigned add_contact(gabbyphysics::ParticleContact *contact, unsigned limit) const;
     };

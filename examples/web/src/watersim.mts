@@ -10,26 +10,6 @@ export const load = async (load_elems: ElementLoaderCallback, update_timer: (n: 
     const ctx = game_canvas.getContext("2d");
     if (!ctx) throw new Error("no 2d ctx");
 
-    const grid_canvas = document.createElement("canvas");
-    grid_canvas.id = "grid_canvas";
-    grid_canvas.width = 800;
-    grid_canvas.height = 800;
-    const grid_ctx = grid_canvas.getContext("2d");
-    if (!grid_ctx) throw new Error("no grid ctx");
-
-    const offscreen_grid = document.createElement("canvas");
-    offscreen_grid.width = grid_canvas.width;
-    offscreen_grid.height = grid_canvas.height;
-    const offscreen_grid_ctx = offscreen_grid.getContext("2d");
-    if (!offscreen_grid_ctx) throw new Error("no offscreen grid ctx");
-
-    const offscreen_grid_lines = document.createElement("canvas");
-    offscreen_grid_lines.width = grid_canvas.width;
-    offscreen_grid_lines.height = grid_canvas.height;
-    const offscreen_grid_lines_ctx = offscreen_grid_lines.getContext("2d");
-    if (!offscreen_grid_lines_ctx) throw new Error("no offscreen grid ctx");
-
-    const DEFAULT_SIM_SPEED = 0.01;
     const DEFAULT_PARTICLE_RADIUS = 5;
     const DEFAULT_DAMPING = 0.95;
     const DEFAULT_GRAVITY_SCALE = 9.81;
@@ -37,7 +17,6 @@ export const load = async (load_elems: ElementLoaderCallback, update_timer: (n: 
     let DAMPING = 0.95;
     let PARTICLE_RADIUS = 5;
     let GRAVITY_SCALE = 9.81;
-    let DRAW_GRIDLINES = false;
 
     const memory = new WebAssembly.Memory({ initial: 4 });
     const import_object = {
@@ -46,8 +25,9 @@ export const load = async (load_elems: ElementLoaderCallback, update_timer: (n: 
             browser_draw_point,
             browser_log,
             browser_clear_canvas,
-            browser_draw_rect,
-            browser_draw_radial_gradient: () => { }
+            browser_draw_rect: (...args: any[]) => { },
+            browser_draw_line,
+            browser_draw_radial_gradient
         },
         // wasi-sdk adds this import namespace when compiling to wasm32-wasi which is default unless --target=wasm32
         wasi_snapshot_preview1: {
@@ -69,16 +49,16 @@ export const load = async (load_elems: ElementLoaderCallback, update_timer: (n: 
             spawn_particle: (x: number, y: number) => void;
             update_particles: (delta_time: number) => void;
             draw_particles: () => void;
-            reset_particles: () => void;
-            set_screen_size: (x: number, y: number) => void;
-            set_damping: (d: number) => void;
-            set_particle_radius: (r: number) => void;
+            init: (x: number, y: number) => void;
+            create_cable: (x1: number, y1: number, x2: number, y2: number) => void;
+            main: () => number;
             set_gravity: (x: number, y: number) => void;
-            init_grid: () => void;
-            paint_wall: (x: number, y: number) => void;
+            set_damping: (damping: number) => void;
+            set_particle_radius: (radius: number) => void;
         };
     }
-    const wasm = (await WebAssembly.instantiateStreaming(fetch("out/particlesim.wasm"), import_object)).instance as WasmInstance;
+    const wasm = (await WebAssembly.instantiateStreaming(fetch("out/watersim.wasm"), import_object)).instance as WasmInstance;
+    wasm.exports.main();
 
     function browser_draw_point(x: number, y: number, size: number, r: number, g: number, b: number) {
         if (!ctx) return;
@@ -90,25 +70,33 @@ export const load = async (load_elems: ElementLoaderCallback, update_timer: (n: 
         ctx.closePath();
     };
 
-    const CellTypeColorMap: { [type: number]: string; } = {
-        0: "rgba(0, 1, 200, 0.2)",
-        1: "rgba(0, 0, 0, 0)",
-        2: "rgba(200, 200, 200, 1)",
-    };
+    function browser_draw_radial_gradient(
+        x: number, y: number,
+        inner_r: number, outer_r: number,
+        r1: number, g1: number, b1: number,
+        r2: number, g2: number, b2: number
+    ) {
+        if (!ctx) return;
 
-    function browser_draw_rect(x: number, y: number, type: number, cell_w: number, cell_h: number) {
-        let color: string = "rgb(227, 61, 148)";
-        if (Object.hasOwn(CellTypeColorMap, type))
-            color = CellTypeColorMap[type];
-        offscreen_grid_ctx!.fillStyle = color;
-        offscreen_grid_ctx!.fillRect(x, y, cell_w, cell_h);
-        grid_ctx!.drawImage(offscreen_grid, 0, 0);
+        ctx.beginPath();
+        const gradient = ctx.createRadialGradient(x, y, inner_r, x, y, outer_r);
+        gradient.addColorStop(0, `rgb(${r1}, ${g1}, ${b1})`);
+        gradient.addColorStop(0, `rgb(${r2}, ${g2}, ${b2})`);
+        ctx.arc(x, y, outer_r, 0, 2 * Math.PI);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        ctx.closePath();
+    }
 
-        offscreen_grid_lines_ctx!.strokeStyle = "grey";
-        offscreen_grid_lines_ctx!.strokeRect(x, y, cell_w, cell_h);
-        if (DRAW_GRIDLINES) {
-            grid_ctx!.drawImage(offscreen_grid_lines, 0, 0);
-        }
+    function browser_draw_line(x1: number, y1: number, x2: number, y2: number, r: number, g: number, b: number) {
+        if (!ctx) return;
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = `rgb(${r}, ${g}, ${b})`;
+        ctx.stroke();
+        ctx.closePath();
     }
 
     function browser_log(log_ptr: number) {
@@ -121,7 +109,6 @@ export const load = async (load_elems: ElementLoaderCallback, update_timer: (n: 
         if (!ctx) return;
 
         ctx.clearRect(0, 0, game_canvas.width, game_canvas.height);
-        // draw_grid();
     }
 
     let prev_timestamp: number | null = null;
@@ -139,31 +126,10 @@ export const load = async (load_elems: ElementLoaderCallback, update_timer: (n: 
             if (Math.floor(((timestamp - prev_timestamp) / 1000) % 60) === 0)
                 update_timer(timestamp - prev_timestamp);
         }
-        prev_timestamp = timestamp;
 
-        frame_ids.forEach(id => window.cancelAnimationFrame(id));
+        prev_timestamp = timestamp;
         frame_ids.push(window.requestAnimationFrame(loop));
     }
-
-    wasm.exports.set_screen_size(game_canvas.width, game_canvas.height);
-    wasm.exports.init_grid();
-
-    type ClickMode = "spawn" | "paint";
-    let click_mode: ClickMode;
-
-    game_canvas.addEventListener("click", evt => {
-        switch (click_mode) {
-            case "spawn":
-                wasm.exports.spawn_particle(evt.clientX - game_canvas.offsetLeft, evt.clientY - game_canvas.offsetTop);
-                break;
-            case "paint":
-                wasm.exports.paint_wall(evt.clientX - game_canvas.offsetLeft, evt.clientY - game_canvas.offsetTop);
-                break;
-
-        }
-    });
-
-    click_mode = "spawn";
 
     document.addEventListener("keydown", evt => {
         switch (evt.code) {
@@ -192,23 +158,6 @@ export const load = async (load_elems: ElementLoaderCallback, update_timer: (n: 
     };
     container.appendChild(start_button);
 
-    const sim_speed_slider = document.createElement("input");
-    sim_speed_slider.type = "range";
-    sim_speed_slider.min = "0.001";
-    sim_speed_slider.max = "0.1";
-    sim_speed_slider.step = "0.0001";
-    sim_speed_slider.defaultValue = DEFAULT_SIM_SPEED.toString();
-    SIM_SPEED = sim_speed_slider.valueAsNumber;
-    const sim_speed_slider_label = document.createTextNode(`sim speed ${SIM_SPEED}`);
-    sim_speed_slider.onchange = (evt) => {
-        // @ts-ignore
-        SIM_SPEED = evt.target.value;
-        sim_speed_slider_label.textContent = `sim speed ${SIM_SPEED}`;
-    };
-
-    container.appendChild(sim_speed_slider_label);
-    container.appendChild(sim_speed_slider);
-
     const damping_slider = document.createElement("input");
     damping_slider.type = "range";
     damping_slider.min = "0";
@@ -224,17 +173,8 @@ export const load = async (load_elems: ElementLoaderCallback, update_timer: (n: 
 
         damping_slider_label.textContent = `damping ${DAMPING}`;
     };
-
     container.appendChild(damping_slider_label);
     container.appendChild(damping_slider);
-
-    const reset_btn = document.createElement("button");
-    reset_btn.innerText = "Reset Particles";
-    reset_btn.onclick = evt => {
-        evt.preventDefault();
-        wasm.exports.reset_particles();
-    };
-    container.appendChild(reset_btn);
 
     const particle_radius = document.createElement("input");
     particle_radius.type = "number";
@@ -270,45 +210,7 @@ export const load = async (load_elems: ElementLoaderCallback, update_timer: (n: 
     };
     container.appendChild(Compass(gravity_dir_handler));
 
-    const click_mode_label = document.createTextNode(`click mode: ${click_mode}`);
-    container.appendChild(click_mode_label);
-    const btn_holder = document.createElement("div");
-    btn_holder.style.display = "grid";
-    btn_holder.style.gridTemplateColumns = "repeat(2, 80px)";
-    const spawn_btn = document.createElement("button");
-    spawn_btn.innerText = "Spawn";
-    const paint_btn = document.createElement("button");
-    paint_btn.innerText = "Paint";
-    const highlight_btn = document.createElement("button");
-    highlight_btn.innerText = "Color";
-    spawn_btn.onclick = () => {
-        click_mode = "spawn";
-        click_mode_label.textContent = `click mode: ${click_mode}`;
-    };
-    paint_btn.onclick = () => {
-        click_mode = "paint";
-        click_mode_label.textContent = `click mode: ${click_mode}`;
-    };
-
-    btn_holder.appendChild(spawn_btn);
-    btn_holder.appendChild(paint_btn);
-    container.appendChild(btn_holder);
-
-    const toggle_gridlines_btn = document.createElement("button");
-    toggle_gridlines_btn.innerText = "Toggle Gridlines";
-    toggle_gridlines_btn.onclick = () => {
-        DRAW_GRIDLINES = !DRAW_GRIDLINES;
-        if (DRAW_GRIDLINES) {
-            grid_ctx?.drawImage(offscreen_grid, 0, 0);
-            grid_ctx?.drawImage(offscreen_grid_lines, 0, 0);
-        } else {
-            grid_ctx?.clearRect(0, 0, grid_canvas.width, grid_canvas.height);
-            grid_ctx?.drawImage(offscreen_grid, 0, 0);
-        }
-    };
-    container.appendChild(toggle_gridlines_btn);
-
-    load_elems([grid_canvas, game_canvas, container]);
+    load_elems([game_canvas, container]);
 
     return () => {
         frame_ids.forEach(id => window.cancelAnimationFrame(id));

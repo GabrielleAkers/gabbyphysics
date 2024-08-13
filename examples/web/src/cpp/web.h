@@ -19,6 +19,11 @@ export extern "C"
     void browser_draw_point(gabbyphysics::real x, gabbyphysics::real y, gabbyphysics::real size, const int r, const int g, const int b);
     void browser_draw_rect(const int x, const int y, const int type, const int cell_w, const int cell_h);
     void browser_draw_line(gabbyphysics::real x1, gabbyphysics::real y1, gabbyphysics::real x2, gabbyphysics::real y2, const int r, const int g, const int b);
+    void browser_draw_radial_gradient(
+        gabbyphysics::real x1, gabbyphysics::real y1,
+        const int inner_r, const int outer_r,
+        const int r1, const int g1, const int b1,
+        const int r2, const int g2, const int b2);
 }
 
 void debug_log(const char *log)

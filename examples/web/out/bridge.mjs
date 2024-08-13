@@ -24,7 +24,8 @@ export const load = async (load_elems, update_timer, reset_timer) => {
             browser_log,
             browser_clear_canvas,
             browser_draw_rect: (...args) => { },
-            browser_draw_line
+            browser_draw_line,
+            browser_draw_radial_gradient: () => { }
         },
         // wasi-sdk adds this import namespace when compiling to wasm32-wasi which is default unless --target=wasm32
         wasi_snapshot_preview1: {
@@ -37,6 +38,7 @@ export const load = async (load_elems, update_timer, reset_timer) => {
             fd_write(...args) {
                 return 0;
             },
+            random_get: Math.random
         }
     };
     const wasm = (await WebAssembly.instantiateStreaming(fetch("out/bridgesim.wasm"), import_object)).instance;
@@ -174,7 +176,7 @@ export const load = async (load_elems, update_timer, reset_timer) => {
     const create_component = (cmd) => {
         console.log("create mode: ", cmd);
         current_cmd = cmd;
-        if (cmd == "PARTICLE")
+        if (cmd === "PARTICLE")
             click_mode = "spawn_particle";
         else
             click_mode = "create_component";

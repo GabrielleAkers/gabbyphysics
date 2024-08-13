@@ -2,6 +2,7 @@
 
 using namespace gabbyphysics;
 
+const Vector3 Vector3::ZERO = Vector3(0, 0, 0);
 const Vector3 Vector3::GRAVITY = Vector3(0, -9.81, 0);
 const Vector3 Vector3::NEGATIVE_GRAVITY = Vector3(0, 9.81, 0);
 const Vector3 Vector3::UP = Vector3(0, 1, 0);
